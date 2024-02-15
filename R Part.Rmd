@@ -9,13 +9,13 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-setwd("C:/Users/victo/OneDrive/Doutorado e IC - Dados/Bioinformatica/SCVI")
-set.seed(4301)
+setwd("C:/Users/victo/OneDrive/Doutorado e IC - Dados/Bioinformatica/SCVI") #Set Work Diretory
+set.seed(4301) #Set Seed
 library(Seurat)
 library(tidyverse)
 ```
 
-```{r}
+```{r, QC Function}
 mad_outlier = function(X, metric, nmads){
   M = X@meta.data[[metric]]
   median_M = median(M, na.rm = TRUE)
@@ -24,7 +24,7 @@ mad_outlier = function(X, metric, nmads){
   return(outlier)}
 ```
 
-```{r C1}
+```{r Open Data}
 C1 <- Read10X("A:/Bioinformatica/PE/Data/C1/")
 C1  <- CreateSeuratObject(counts = C1, project = "Control 1")
 Cells_Before = as.numeric(length(Cells(C1)))
@@ -55,15 +55,14 @@ C2$Age = "45"
 saveRDS(C2, "C2.rds")
 ```
 
-```{r}
+```{r Merge Data and Save}
 merged_obj <- merge(x = C1, y = c(C2), add.cell.ids = c("C1", "C2"))
 #saveRDS(merged_obj, "Merged.rds")
-
 merged_obj$barcode <- colnames(merged_obj)
-write.csv(merged_obj@meta.data, file='Data_metadata.csv', quote=F, row.names=F)
+write.csv(merged_obj@meta.data, file='Data_metadata.csv', quote=F, row.names=F) #Save Metadata
 library(Matrix)
 counts_matrix <- JoinLayers(merged_obj)
 counts_matrix = GetAssayData(counts_matrix, assay='RNA', slot='counts')
-writeMM(counts_matrix, file= 'Data_counts.mtx')
+writeMM(counts_matrix, file= 'Data_counts.mtx') #Save Raw Matrix.
 ```
 
