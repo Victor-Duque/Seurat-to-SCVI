@@ -1,0 +1,69 @@
+---
+title: "SCVI - R"
+author: "Victor Duque"
+date: "2024-02-15"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/victo/OneDrive/Doutorado e IC - Dados/Bioinformatica/SCVI")
+set.seed(4301)
+library(Seurat)
+library(tidyverse)
+```
+
+```{r}
+mad_outlier = function(X, metric, nmads){
+  M = X@meta.data[[metric]]
+  median_M = median(M, na.rm = TRUE)
+  mad_M = mad(M, na.rm = TRUE)
+  outlier = (M < (median_M - nmads * mad_M)) | (M > (median_M + nmads * mad_M))
+  return(outlier)}
+```
+
+```{r C1}
+C1 <- Read10X("A:/Bioinformatica/PE/Data/C1/")
+C1  <- CreateSeuratObject(counts = C1, project = "Control 1")
+Cells_Before = as.numeric(length(Cells(C1)))
+C1$log1p_total_counts = log1p(C1@meta.data$nCount_RNA)
+C1$log1p_n_genes_by_counts = log1p(C1@meta.data$nFeature_RNA)
+C1[["percent.mt"]] = PercentageFeatureSet(C1, pattern = "^MT-")
+bool_vector = !mad_outlier(C1, 'log1p_total_counts', 1) & #Correto é 5
+                !mad_outlier(C1, 'log1p_n_genes_by_counts', 1) #Correto é 5
+C1 = subset(C1, cells = which(bool_vector))
+C1 = subset(C1, subset = percent.mt < 5) # Single Cell <10  | 1,2,5 < Single Nucleus
+Count = data.frame(Base = Cells_Before, 
+                     QC = as.numeric(length(as.numeric(Idents(C1)))))
+C1$Age = "42"
+saveRDS(C1, "C1.rds")
+C2 <- Read10X("A:/Bioinformatica/PE/Data/C2/")
+C2  <- CreateSeuratObject(counts = C2, project = "Control 2")
+Cells_Before = as.numeric(length(Cells(C2)))
+C2$log1p_total_counts = log1p(C2@meta.data$nCount_RNA)
+C2$log1p_n_genes_by_counts = log1p(C2@meta.data$nFeature_RNA)
+C2[["percent.mt"]] = PercentageFeatureSet(C2, pattern = "^MT-")
+bool_vector = !mad_outlier(C2, 'log1p_total_counts', 1) & #Correto é 5
+                !mad_outlier(C2, 'log1p_n_genes_by_counts', 1) #Correto é 5
+C2 = subset(C2, cells = which(bool_vector))
+C2 = subset(C2, subset = percent.mt < 5) # Single Cell <10  | 1,2,5 < Single Nucleus
+Count = data.frame(Base = Cells_Before, 
+                     QC = as.numeric(length(as.numeric(Idents(C2)))))
+C2$Age = "45"
+saveRDS(C2, "C2.rds")
+```
+
+```{r}
+merged_obj <- merge(x = C1, y = c(C2), add.cell.ids = c("C1", "C2"))
+#saveRDS(merged_obj, "Merged.rds")
+
+merged_obj$barcode <- colnames(merged_obj)
+write.csv(merged_obj@meta.data, file='Data_metadata.csv', quote=F, row.names=F)
+library(Matrix)
+counts_matrix <- JoinLayers(merged_obj)
+counts_matrix = GetAssayData(counts_matrix, assay='RNA', slot='counts')
+writeMM(counts_matrix, file= 'Data_counts.mtx')
+```
+
