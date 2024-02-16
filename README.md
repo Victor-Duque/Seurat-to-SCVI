@@ -1,5 +1,6 @@
 # Seurat-to-SCVI
 conda env create -f conda_env.yml
+
 conda activate scrnaseq
 
 Open Seurat Object in Python and execute SCVI.
