@@ -11,7 +11,7 @@ dependencies:
   - r-curl=5.1.0
   - r-devtools=2.4.5
   - r-dplyr=1.1.3
-  - r-igraph=2.0.1.1
+  - r-igraph
   - r-leiden=0.4.3.1
   - r-matrix
   - r-openssl
